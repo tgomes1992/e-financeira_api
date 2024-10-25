@@ -2,8 +2,8 @@ import requests
 import pandas as pd
 from ..models import InvestidorEfin
 import os
-from JCOTSERVICE import ManEnderecoService , ManClienteService
-from intactus import o2Api
+from backup_modules.JCOTSERVICE import ManEnderecoService , ManClienteService
+from backup_modules.intactus import o2Api
 
 class AtualizacaoInvestidores():
 

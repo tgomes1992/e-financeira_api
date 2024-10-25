@@ -1,4 +1,4 @@
-from JCOTSERVICE import RelPosicaoCotistaService
+from backup_modules.JCOTSERVICE import RelPosicaoCotistaService
 
 
 

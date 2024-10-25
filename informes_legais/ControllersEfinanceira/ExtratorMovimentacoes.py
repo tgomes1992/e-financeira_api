@@ -1,13 +1,16 @@
 import requests
 import pandas as pd
 from ..models import BaseMovimentacoes  , ContaEfin , ResgatesJcot , MovimentoDetalhado , AplicacoesJcot
-from JCOTSERVICE import RelAnaliticoCotistaFundo , ConsultaMovimentoPeriodoV2Service
+from backup_modules.JCOTSERVICE import RelAnaliticoCotistaFundo , ConsultaMovimentoPeriodoV2Service , ListFundosService
 import os
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 
 
 class ExtratorMovimentacoes():
+
+    print (os.environ.get("JCOT_USER"),os.environ.get("JCOT_PASSWORD"))
+
     service_movimentos = RelAnaliticoCotistaFundo(os.environ.get("JCOT_USER"),
                                                            os.environ.get("JCOT_PASSWORD"))
     
@@ -44,17 +47,32 @@ class ExtratorMovimentacoes():
             resgate.save()
 
 
-    def main_extrair_movimentacoes(self ,  dados):
-        dados['movimento'] = "R"
+    def main_extrair_movimentacoes(self ,  data_inicial , data_final):
+
+        fundos = ListFundosService(os.environ.get("JCOT_USER") ,
+                                     os.environ.get("JCOT_PASSWORD")).listFundoRequest()
+
+        print (len(fundos.to_dict("records")))
+
+
+        fundos_dtvm = fundos[fundos['administrador'] == '36113876000191']
+
+        print (len(fundos_dtvm.to_dict("records")) ,  "Total Fundos")
+
+
+        extracao = [{
+            "data_inicial": data_inicial.strftime("%Y-%m-%d"),
+            "data_final": data_final.strftime("%Y-%m-%d"),
+            "cd_fundo": item['codigo'],
+            "cnpj_fundo": item['cnpj']
+        }   for item in fundos_dtvm.to_dict("records")]
+
 
         with ThreadPoolExecutor(max_workers=3) as executor:
-            executor.submit(self.base_movimentacoes,dados)
-            executor.submit(self.extrair_resgates,dados)
-            executor.submit(self.buscar_movimentos_detalhados,dados)
-            executor.submit(self.extrair_aplicacoes, dados)
+            executor.map(self.extrair_aplicacoes, extracao)
+            executor.map(self.extrair_resgates ,  extracao)
+            executor.map(self.extrair_resgates, extracao)
 
-        # self.atualizar_principal_notas_resgate()
-     
 
     def base_movimentacoes(self, dados):
         contas = self.buscar_movimentos(dados)
@@ -103,9 +121,12 @@ class ExtratorMovimentacoes():
             pass
 
     def extrair_aplicacoes(self, dados):
-            dados['movimento'] =  "A"
-            resgates = self.service_buscar_resgates.get_movimento_periodo_request(dados)
+
+
             try:
+                dados['movimento'] = "A"
+                resgates = self.service_buscar_resgates.get_movimento_periodo_request(dados)
+                print(resgates)
                 resgates_a_salvar = [AplicacoesJcot(
                     data_movimento=item['dtMov'],
                     data_liquidacao=item['dtLiqFinanceira'],
