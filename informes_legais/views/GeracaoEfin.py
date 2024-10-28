@@ -5,9 +5,9 @@ from django.shortcuts import render
 from django.http import HttpResponse ,  JsonResponse
 from ..ControllersEfinanceira import *
 from ..models import ContaEfin , InvestidorEfin
-from JCOTSERVICE import ListFundosService
+from backup_modules.JCOTSERVICE import ListFundosService
 import os
-from intactus import o2Api
+from backup_modules.intactus import o2Api
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -214,7 +214,7 @@ class GeracaoEfin(View):
             for investidor in investidores:
                 executor.submit(self.gerar_semestre ,investidor , fundos_dtvm)
 
-    @method_decorator(login_required)
+
     def get(self, request):
         #todo incluir depois a possibilidade de receber
         # uma lista de fundos para ser a base da extração

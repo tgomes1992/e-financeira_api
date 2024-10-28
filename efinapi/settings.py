@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'informes_legais' ,
+    'cadastros',
     'django_celery_results' ,
     'drf_yasg'
 ]

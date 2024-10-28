@@ -49,20 +49,16 @@ class ExtratorMovimentacoes():
 
     def main_extrair_movimentacoes(self ,  data_inicial , data_final):
 
-        fundos = ListFundosService(os.environ.get("JCOT_USER") ,
+        fundos = ListFundosService(os.environ.get("JCOT_USER"),
                                      os.environ.get("JCOT_PASSWORD")).listFundoRequest()
-
-        print (len(fundos.to_dict("records")))
-
 
         fundos_dtvm = fundos[fundos['administrador'] == '36113876000191']
 
         print (len(fundos_dtvm.to_dict("records")) ,  "Total Fundos")
 
-
         extracao = [{
-            "data_inicial": data_inicial.strftime("%Y-%m-%d"),
-            "data_final": data_final.strftime("%Y-%m-%d"),
+            "data_inicial": data_inicial,
+            "data_final": data_final,
             "cd_fundo": item['codigo'],
             "cnpj_fundo": item['cnpj']
         }   for item in fundos_dtvm.to_dict("records")]
@@ -70,8 +66,8 @@ class ExtratorMovimentacoes():
 
         with ThreadPoolExecutor(max_workers=3) as executor:
             executor.map(self.extrair_aplicacoes, extracao)
-            executor.map(self.extrair_resgates ,  extracao)
-            executor.map(self.extrair_resgates, extracao)
+            executor.map(self.extrair_resgates,  extracao)
+
 
 
     def base_movimentacoes(self, dados):
@@ -99,6 +95,7 @@ class ExtratorMovimentacoes():
             pass
     
     def extrair_resgates(self, dados):
+        dados['movimento'] = "R"
         resgates = self.service_buscar_resgates.get_movimento_periodo_request(dados)
         try:
             resgates_a_salvar = [ResgatesJcot(
